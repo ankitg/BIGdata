@@ -19,9 +19,6 @@ var SemantriaService = (function() {
   SimpleCallbackHandler.prototype.onCollsAutoResponse = function(request) {};
 
   // the consumer key and secret
-  var consumerKey = "";
-  var consumerSecret = "";
-
   // Creates JSON serializer instance
   var serializer = new JsonSerializer();
   // Initializes new session with the keys, the serializer object, application name and compression condition.
@@ -43,16 +40,29 @@ var SemantriaService = (function() {
 
   function batchQueueDocuments(texts) {
     // Push text for analysis
+    var docs = [];
     for (var key in texts) {
       // Creates a sample document which need to be processed on Semantria
       var doc = {"id" : key, "text" : texts[key]};
-      
+      docs.push(doc); 
+    }
+
+
+    var remaining = docs.length;
+    var batchnum = 0;
+    while (remaining > 0) {
+      var start = batchnum*50;
+      var end = Math.min(start+50, docs.length);
+      var batch = docs.slice(start, end);
+      output("sent " + end + "/" + docs.length);
+      remaining -= 50;
       // Queues document for processing on Semantria service
-      var status = session.queueDocument(doc);
-        
+      var status = session.queueBatchOfDocuments(docs);
       // Check status from Semantria service
       if (status == 202) {
         output("\"" + doc["id"] + "\" document queued successfully.<br/>");
+      } else {
+        console.log("something went wrong: " + status);
       }
     }
 
