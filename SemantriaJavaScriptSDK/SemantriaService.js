@@ -19,6 +19,9 @@ var SemantriaService = (function() {
   SimpleCallbackHandler.prototype.onCollsAutoResponse = function(request) {};
 
   // the consumer key and secret
+  var consumerKey = "9cb16157-23ac-42cb-8e3f-4c08cf74740f";
+  var consumerSecret = "8dd0484c-95cd-4474-beec-0530044d0246";
+
   // Creates JSON serializer instance
   var serializer = new JsonSerializer();
   // Initializes new session with the keys, the serializer object, application name and compression condition.
@@ -50,20 +53,23 @@ var SemantriaService = (function() {
 
     var remaining = docs.length;
     var batchnum = 0;
+    var perbatch = 50;
     while (remaining > 0) {
-      var start = batchnum*50;
-      var end = Math.min(start+50, docs.length);
+      var start = batchnum*perbatch;
+      var end = Math.min(start+perbatch, docs.length);
       var batch = docs.slice(start, end);
       output("sent " + end + "/" + docs.length);
-      remaining -= 50;
+      remaining -= perbatch;
       // Queues document for processing on Semantria service
       var status = session.queueBatchOfDocuments(docs);
       // Check status from Semantria service
       if (status == 202) {
-        output("\"" + doc["id"] + "\" document queued successfully.<br/>");
+        output("\"" + doc["id"] + "\" document queued successfully");
       } else {
         console.log("something went wrong: " + status);
+       	console.log(status);
       }
+      batchnum++;
     }
 
     var analyticData = new Array();
@@ -76,7 +82,7 @@ var SemantriaService = (function() {
       var processedDocuments = session.getProcessedDocuments();
       if (processedDocuments && processedDocuments.constructor == Array) {
         for (var i in processedDocuments) {
-          output(processedDocuments[i]);
+          output("Got back " + analyticData.length + "/" + texts.length);
           analyticData.push(processedDocuments[i]);
         }
       }
