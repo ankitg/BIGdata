@@ -1,0 +1,18 @@
+<html>
+	<head>
+		<title>TestApp</title>
+	</head>
+	<body>
+		<div id="output" style="font-family: Tahoma; font-size: 13px;"></div>
+	</body>
+	
+	<script type="text/javascript" src="SemantriaJavaScriptSDK.js"></script>
+	<script type="text/javascript" src="SemantriaService.js"></script>
+		
+	<script type="text/javascript">
+		var outputElement = document.getElementById("output");
+		scores = SemantriaService.getSentimentScores(["positive light blah", "a slightly longer one to hopefully throw it off", "pretty", "ugly", "stateless means a request does everything to complete, soap can support multiple requests to complete a single action"]);
+		// runTestApp("Arrest made following home search in White House ricin investigation");
+		// runTestApp("this is a new article");
+	</script>
+</html>
