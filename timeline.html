@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+
+		<!-- Always force latest IE rendering engine (even in intranet) & Chrome Frame
+		Remove this if you use the .htaccess -->
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+
+		<title>Guardian Timeline</title>
+		<meta name="description" content="" />
+
+		<!-- Replace favicon.ico & apple-touch-icon.png in the root of your domain and delete these references -->
+		<link rel="shortcut icon" href="/favicon.ico" />
+		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+		
+		<script type="text/javascript" src="SemantriaJavaScriptSDK/SemantriaJavaScriptSDK.js"></script>
+		<script type="text/javascript" src="SemantriaJavaScriptSDK/SemantriaService.js"></script>
+		<script type="text/javascript" src="http://stevenlevithan.com/assets/misc/date.format.js"></script>
+		
+		<script src="http://code.jquery.com/jquery-2.0.0.min.js"></script>
+		<script src="http://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
+		
+		<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" />
+  		<script>
+			$(function() {
+				$( "#sdatepicker" ).datepicker();
+			});
+			$(function() {
+				$( "#edatepicker" ).datepicker();
+			});
+			EVENTS = {
+				positive: [],
+				negative: []
+			}
+			
+			function constructURL(term)
+			{
+				var base = "http://content.guardianapis.com/search?page-size=50&format=json&show-fields=thumbnail%2Cheadline%2Cstandfirst&api-key=admut6qfe7483kdqzmbhj3mg&page-size=50";
+				base += "&order-by=relevance";
+				if ($( "#sdatepicker" )[0].value != "") base += "&from-date=" + (new Date($( "#sdatepicker" )[0].value)).format("yyyy-mm-dd");
+				if ($( "#edatepicker" )[0].value != "") base += "&to-date=" + (new Date($( "#edatepicker" )[0].value)).format("yyyy-mm-dd");
+				if (typeof term != "undefined") base += "&q=" + term;
+				return base;
+			}
+			function getData(term, element)
+			{
+				var url = constructURL(term);
+				var xhr = new XMLHttpRequest();
+				element.innerHTML += "URL: "+url+"<br/>";
+			
+				xhr.onreadystatechange = function()
+				{
+					element.innerHTML += "State change "+xhr.readyState+" "+xhr.status+"<br/>";
+					if (this.readyState == 4 && this.status == 200)
+					{
+						parseGuardianResults(JSON.parse(xhr.response), element);
+					}
+				}
+				xhr.open("GET", url, true)
+				xhr.send()
+			}
+			
+			function parseGuardianResults(jso, elm)
+			{
+				var events = [];
+				var texts = [];
+				for (x in jso.response.results)
+				{
+					var result = jso.response.results[x];
+					var event = {};
+					var eDate = new Date(result.webPublicationDate)
+					event.id = result.id;
+					
+					event.startdate = event.enddate = eDate.format("yyyy-mm-dd hh:MM:ss")//eDate.getFullYear() + "-" + eDate.getMonth() + "-" + eDate.getDay() + " " + eDate.getHours() + ":" + eDate.getMinutes()+ ":" + eDate.getSeconds();
+					event.title = result.webTitle;
+					event.description = result.fields.standfirst;
+					event.image = result.fields.thumbnail;
+					event.link = result.webUrl;
+					event.importance = 50;
+					events.push(event);
+					elm.innerHTML += JSON.stringify(event)+"<br/>";
+					var text = event.title + (event.description || ""); 
+					texts.push(text)
+					elm.innerHTML += "<b>" + text + "<\b><br/>";
+				}
+				var scores = SemantriaService.getSentimentScores(texts);
+				for (x in events)
+				{
+					if (scores[x] < 0)
+					{
+						EVENTS.positive.push(events[x]);	
+					}
+					else
+					{
+						EVENTS.negative.push(events[x]);
+					}
+				}
+			}
+		</script>		
+	</head>
+
+	<body>
+		<div>
+			<header>
+				<h1>Guardian Timeline</h1>
+			</header>
+			<div>
+				<p>Search Term: <input id="termInput" type="text"/></p>
+				<p>Start Date: <input type="text" id="sdatepicker" /></p>
+				<p>End Date: <input type="text" id="edatepicker" /></p>
+				<p><input value="Generate" type="button" onclick="getData(document.getElementById('termInput').value, document.getElementById('resultsDiv'))"/></p>
+
+			</div>
+			<div id="resultsDiv"></div>
+		</div>
+	</body>
+</html>
